@@ -117,6 +117,65 @@ class GUITests {
 
 	  }
 
+	void testMakeMove() {
+	    // Create a new game board with a size of 3
+	    State board = new State(3);
+	    JPanel grid = new JPanel();
+	    JButton tic = new JButton();
+	    
+	    // Make a valid move
+	    makeMove(0, 0, 'S', grid, tic);
+	    assertEquals("Red - S", tic.getText());
+	    assertEquals(Color.CYAN, tic.getBackground());
+	    assertEquals("Current player: Blue", currentPlayer.getText());
+	    
+	    // Make an invalid move
+	    makeMove(0, 0, 'O', grid, tic);
+	    assertEquals("Red - S", tic.getText());
+	    assertEquals(Color.CYAN, tic.getBackground());
+	    assertEquals("Current player: Blue", currentPlayer.getText());
+	    
+	    // Make a winning move
+	    makeMove(1, 1, 'O', grid, tic);
+	    makeMove(0, 1, 'S', grid, tic);
+	    makeMove(2, 2, 'O', grid, tic);
+	    makeMove(0, 2, 'S', grid, tic);
+	    makeMove(2, 0, 'O', grid, tic);
+	    makeMove(1, 0, 'S', grid, tic);
+	    makeMove(2, 1, 'O', grid, tic);
+	    assertEquals(State.PLAYER_2_WINS, board.getState(isGameSimple()));
+	    JOptionPane.showMessageDialog(grid, "Blue won!");
+	    
+	    // Make a draw
+	    makeMove(1, 2, 'S', grid, tic);
+	    makeMove(0, 1, 'O', grid, tic);
+	    makeMove(0, 2, 'S', grid, tic);
+	    makeMove(1, 1, 'O', grid, tic);
+	    makeMove(2, 0, 'S', grid, tic);
+	    makeMove(2, 1, 'O', grid, tic);
+	    makeMove(1, 0, 'S', grid, tic);
+	    makeMove(2, 2, 'O', grid, tic);
+	    makeMove(0, 0, 'S', grid, tic);
+	    assertEquals(State.DRAW, board.getState(isGameSimple()));
+	    JOptionPane.showMessageDialog(grid, "It's a draw!");
+	}
+
+	    @Test
+	    void testGetBestMove() {
+	        State state = new State(3);
+	        state.move(0, 0, 'O');
+	        state.move(1, 1, 'S');
+	        state.move(2, 2, 'O');
+	        Move move = AI.getBestMove(state);
+	        Assertions.assertNotNull(move);
+	        Assertions.assertTrue(move.getPiece() == 'O' || move.getPiece() == 'S');
+	        Assertions.assertTrue(move.getSpot().get(0) == 1 || move.getSpot().get(0) == 2);
+	        Assertions.assertTrue(move.getSpot().get(1) == 0 || move.getSpot().get(1) == 1);
+	    }
+	}
+
+	
+
 	  	
 	  	
 
@@ -135,6 +194,7 @@ class GUITests {
     
     
     
-
-
+    
+    
+    
 

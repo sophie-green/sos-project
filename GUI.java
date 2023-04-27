@@ -1,40 +1,255 @@
 package gui;
-
+ 
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Stack;
-
+ 
 import javax.swing.*;
+
+class Spot {
+	
+	private int player = 1;
+	private char piece = ' ';
+	
+	public Spot() {
+		
+	}
+	
+	public void setPlayer(int player) {
+		this.player = player;
+	}
+	
+	public void setPiece(char piece) {
+		this.piece = piece;
+	}
+	
+	public int getPlayer() {
+		return player;
+	}
+	
+	public char getPiece() {
+		return piece;
+	}
+}
+
+class State {
+	
+	public static final int ACTIVE = 0;
+	public static final int PLAYER_1_WINS = 1;
+	public static final int PLAYER_2_WINS = 2;
+	public static final int DRAW = 3;
+	
+	private Spot[][] board;
+	private int player = 1;
+	
+	public State(int size) {
+		
+		board = new Spot[size][size];
+		
+		for(int row = 0; row < size; row++) {
+			for(int col = 0; col < size; col++) {
+				board[row][col] = new Spot();
+			}
+		}
+	}
+	
+	public Spot[][] getBoard() {
+		return board;
+	}
+	
+	public int getPlayer() {
+		return player;
+	}
+	
+	public int getSize() {
+		return board.length;
+	}
+	
+	public ArrayList<ArrayList<Integer>> getOpenSpots() {
+		
+		ArrayList<ArrayList<Integer>> openSpots = new ArrayList<ArrayList<Integer>>();
+		
+		for(int row = 0; row < getSize(); row++) {
+			
+			for(int col = 0; col < getSize(); col++) {
+				
+				if(board[row][col].getPiece() == ' ') {
+					
+					ArrayList<Integer> openSpot = new ArrayList<Integer>();
+					
+					openSpot.add(row);
+					openSpot.add(col);
+					
+					openSpots.add(openSpot);
+				}
+			}
+		}
+		
+		return openSpots;
+	}
+	
+	public boolean isFull() {
+		return getOpenSpots().size() == 0;
+	}
+
+	public boolean move(int row, int col, char piece) {
+		
+		if(row < 0 || row >= getSize() ||
+				col < 0 || col >= getSize() ||
+				board[row][col].getPiece() != ' ' ||
+				player < 1 || player > 2 ||
+				(piece != 'O' && piece != 'S')) {
+
+			return false;
+		}
+		
+		board[row][col].setPlayer(player);
+		board[row][col].setPiece(piece);
+		
+		player = player == 1 ? 2 : 1;
+		
+		return true;
+	}
+	
+	private boolean getSOSCheckSpot(int player, int row, int col) {
+		
+		if(row < 0 || row >= getSize() || col < 0 || col >= getSize())
+			return false;
+		
+		return board[row][col].getPlayer() == player &&
+			board[row][col].getPiece() == 'S';
+	}
+	
+	private int getSOSCheck(int player, int row, int col) {
+		
+		int count = 0;
+		
+		for(int i = -1; i <= 1; i++) {
+			
+			if(getSOSCheckSpot(player, row - 1, col + i) &&
+				getSOSCheckSpot(player, row + 1, col - i)) {
+				
+				count += 1;
+			}
+		}
+		
+		if(getSOSCheckSpot(player, row, col - 1) &&
+			getSOSCheckSpot(player, row, col + 1)) {
+			
+			count += 1;
+		}
+		
+		return count;
+	}
+	
+	public int getSOS(int player) {
+		
+		int count = 0;
+		
+		for(int row = 0; row < getSize(); row++) {
+			
+			for(int col = 0; col < getSize(); col++) {
+				
+				if(board[row][col].getPiece() == 'O' &&
+					board[row][col].getPlayer() == player) {
+					
+					count += getSOSCheck(player, row, col);
+				}
+			}
+		}
+		
+		return count;
+	}
+	
+	public int getState(boolean isSimple) {
+		
+		boolean full = isFull();
+		
+		if(!isSimple && !full)
+			return ACTIVE;
+		
+		int player1 = getSOS(1);
+		int player2 = getSOS(2);
+		
+		if(player1 > player2)
+			return PLAYER_1_WINS;
+		
+		if(player1 < player2)
+			return PLAYER_2_WINS;
+		
+		return isSimple ? (full ? DRAW : ACTIVE) : DRAW;
+	}
+}
+
+class Move {
+	
+	private ArrayList<Integer> spot;
+	private char piece;
+	
+	public Move(ArrayList<Integer> spot, char piece) {
+		this.spot = spot;
+		this.piece = piece;
+	}
+	
+	public ArrayList<Integer> getSpot() {
+		return spot;
+	}
+	
+	public char getPiece() {
+		return piece;
+	}
+}
+
+class AI {
+	
+	public AI() {
+		
+	}
+	
+	public static Move getBestMove(State state) {
+		
+		ArrayList<ArrayList<Integer>> options = state.getOpenSpots();
+		
+		if(options.size() == 0)
+			return null;
+		
+		ArrayList<Integer> spot = options.get((int) Math.floor(Math.random() * options.size()));
+		char piece = Math.random() < .5 ? 'O' : 'S';
+		
+		// STUB - BEGIN
+		
+		return new Move(spot, piece);
+	}
+}
 
 public class GUI {
 	// Class Variables
 	static JButton button = new JButton("Submit");
 	static JRadioButton sbutton = new JRadioButton("S");
 	static JRadioButton obutton = new JRadioButton("O");
-	static JRadioButton redbutton = new JRadioButton("Red");
-	static JRadioButton bluebutton = new JRadioButton("Blue");
 	static JRadioButton simplebutton = new JRadioButton("Simple game");
 	static JRadioButton genbutton = new JRadioButton("General game");
 	static JTextField field = new JTextField("", 3);
-	// static JPanel panel_1 = new JPanel();
 	static JLabel currentPlayer = new JLabel("Current player");
 	static JLabel titleLabel = new JLabel("SOS Game");
 	static int redScore = 0;
 	static int blueScore = 0;
-
-	static String[][] board;
+	static JButton resetbutton = new JButton("Reset");
+	static JRadioButton aiOn = new JRadioButton("AI Player One On");
+	static JRadioButton aiOff = new JRadioButton("AI Player One Off");
+	static JRadioButton ai2On = new JRadioButton("AI Player Two On");
+	static JRadioButton ai2Off = new JRadioButton("AI Player Two Off");
+ 
+ 
+	static State board;
 	static int lettersEnteredCount = 0;
-
+ 
 	static HashMap<String, Boolean> sosCombinationPositionString = new HashMap<>();
-
+ 
 	// Constructor
-
+ 
 	/*
 	 * public GUI() { // Local Variables
 	 * 
@@ -61,59 +276,63 @@ public class GUI {
 	 * return panel_1; }
 	 * 
 	 */
-
+ 
 	private static void buildGUI(Container c) {
 		// Local Variables
-
+ 
 		JPanel jpaHeader = createHeaderPanel();
-		JPanel jpaColor = createColorPanel();
 		JPanel jpaGrid = createGridPanel();
 		JPanel jpaLetter = createLetterPanel();
 		// JPanel jpaTurn = createTurnPanel();
 		JPanel jpaType = createGameTypePanel(jpaHeader);
 		// JPanel jpaGridinGrid = new JPanel();
-
+ 
 		// Set layout for container c
-
+ 
 		c.setLayout(new BorderLayout());
-
+ 
 		// Instantiate the Grid Panel
-
+ 
 		// jpaGridinGrid = createGridInGridPanel();
-
+ 
 		// Add GUI Components
-
+ 
 		c.add(jpaHeader, BorderLayout.NORTH);
-		c.add(jpaColor, BorderLayout.WEST);
 		c.add(jpaGrid, BorderLayout.CENTER);
 		// c.add( jpaGridinGrid, BorderLayout.CENTER);
 		c.add(jpaLetter, BorderLayout.EAST);
-
+		c.add(createAIPanel(), BorderLayout.WEST);
+		c.add(createAI2Panel(), BorderLayout.SOUTH);
+		
+ 
 		// c.add( jpaTurn, BorderLayout.SOUTH );
-
+ 
 		buttonAction(jpaGrid);
-
+		
+		simplebutton.setSelected(true);
+		sbutton.setSelected(true);
+		aiOff.setSelected(true);
 	}
-
+ 
 	private static JPanel createHeaderPanel() {
 		// Local Variables
-
+ 
 		JPanel jpaHeader = new JPanel();
-
+ 
 		JPanel jpaSOS = createSOSPanel();
 		JPanel jpaGameType = createGameTypePanel(jpaHeader);
 		JPanel jpaBoardSize = createBoardSizePanel();
-
+ 
 		JLabel jlLabel = titleLabel;
-
+ 
 		// Set layout for header panel
-
+ 
 		jpaHeader.setLayout(new BorderLayout());
-
+ 
 		// Instantiate the Grid Panel
-
+ 
 		// Add GUI Components
-
+ 
 		jpaHeader.add(jpaSOS, BorderLayout.NORTH);
 		jpaHeader.add(jpaGameType, BorderLayout.CENTER);
 		jpaHeader.add(jpaBoardSize, BorderLayout.EAST);
@@ -121,439 +340,268 @@ public class GUI {
 		jpaHeader.add(field, BorderLayout.EAST);
 		jpaHeader.add(currentPlayer, BorderLayout.SOUTH);
 		jpaHeader.add(button, BorderLayout.NORTH);
-
+ 
 		// Return the panel
-
+ 
 		return jpaHeader;
 	}
-
+ 
 	private static JPanel createSOSPanel() {
 		// Local Variables
-
+ 
 		JPanel jpaSOS = new JPanel();
-
+ 
 		// Instantiate GUI components
-
+ 
 		// Add GUI components to panel
-
+ 
 		jpaSOS.add(titleLabel);
-
+ 
 		// Return panel
-
+ 
 		return jpaSOS;
 	}
-
+ 
+ 
 	private static JPanel createGameTypePanel(JPanel header) {
 		JPanel jpaType = new JPanel();
-
+ 
 		JRadioButton jrbSimple = simplebutton;
 		JRadioButton jrbGen = genbutton;
-
+ 
 		ButtonGroup bgGameType = new ButtonGroup();
-
+ 
 		// Instantiate GUI Components
-
+ 
 		// Add radio buttons to button group
-
+ 
 		bgGameType.add(jrbSimple);
 		bgGameType.add(jrbGen);
-
+ 
 		// Add GUI components
-
+ 
 		jpaType.add(jrbSimple);
 		jpaType.add(jrbGen);
-
+ 
 		header.add(jpaType);
-
+ 
 		// Return the JPanel
-
+ 
 		return jpaType;
-
+ 
 	}
-
+ 
 	private static JPanel createBoardSizePanel() {
-
+ 
 		JPanel jpaBoard = null;
 		jpaBoard = new JPanel();
-
+ 
 		jpaBoard.setLayout(new GridLayout());
-
+ 
 		return jpaBoard;
 	}
-
-	public static JPanel createColorPanel() {
-		// Local Variables
-
-		JPanel jpaColor = null;
-
-		JRadioButton jrbRed = null;
-		JRadioButton jrbBlue = null;
-
-		ButtonGroup bgColor = null;
-
-		// Instantiate GUI Components
-
-		jpaColor = new JPanel();
-
-		JLabel label = titleLabel;
-
-		jrbRed = redbutton;
-		jrbBlue = bluebutton;
-
-		bgColor = new ButtonGroup();
-
-		// Add radio buttons to button group
-
-		bgColor.add(jrbRed);
-		bgColor.add(jrbBlue);
-
-		// Add GUI components
-
-		jpaColor.add(jrbRed);
-		jpaColor.add(jrbBlue);
-		jpaColor.add(label);
-
-		// Return the JPanel
-
-		return jpaColor;
-	}
-
+ 
 	private static JPanel createGridPanel() {
 		JPanel jpaGridPanel = null;
 		jpaGridPanel = new JPanel();
-
+ 
 		jpaGridPanel.setLayout(new GridLayout());
-
+ 
 		return jpaGridPanel;
-
+ 
 	}
-
+ 
 	private static JPanel createLetterPanel() {
 		// Local Variables
-
+ 
 		JPanel jpaLetter = null;
-
+ 
 		JRadioButton jrbS = null;
 		JRadioButton jrbO = null;
-
+ 
 		ButtonGroup bgLetter = null;
-
+ 
 		// Instantiate GUI Components
-
+ 
 		jpaLetter = new JPanel();
-
+ 
 		jrbS = sbutton;
 		jrbO = obutton;
-
+ 
 		bgLetter = new ButtonGroup();
-
+ 
 		// Add radio buttons to button group
-
+ 
 		bgLetter.add(jrbS);
 		bgLetter.add(jrbO);
-
+ 
 		// Add GUI components
-
+ 
 		jpaLetter.add(jrbS);
 		jpaLetter.add(jrbO);
-
-		// Return the JPanel
-
+ 
 		return jpaLetter;
 	}
-
-	private static JPanel createTurnPanel() {
-		JPanel jpaTurn = new JPanel();
-
-		JLabel jlCurrentPlayer = null;
-
-		jlCurrentPlayer = new JLabel(" ");
-
-		jpaTurn.add(jlCurrentPlayer);
-
-		return jpaTurn;
-	}
-
-	private static void updateBoard(String currentPlayerText, int index, int row, int col, String value) {
-
-		if (isPlayerRed(redbutton, bluebutton)) {
-			board[row][col] = value;
-		} else {
-			board[row][col] = value;
-		}
-		lettersEnteredCount++;
-	}
-
-	private static boolean isGameOver(int gridSize) {
-		
-		if(isGameSimple(simplebutton, genbutton) && sosCombinationPositionString.size() == 1) {
-			return true;
-		}
-		else if (lettersEnteredCount == gridSize * gridSize) {
-			return true;
-		}
-		return false; 
-	}
-
-	private static String getWordFromStack(Stack<String> stack) {
-		Stack<String> newStack = (Stack<String>) stack.clone();
-		String backwardsS = "";
-		while (!newStack.isEmpty()) {
-			backwardsS += newStack.pop();
-		}
-		String reversed = "";
-
-		for (int i = 0; i < backwardsS.length(); i++) {
-			reversed += backwardsS.charAt(i);
-
-		}
-		return reversed;
-
-	}
-
-	private static void scoreWord(String word, String posString) {
-
-		if (word.equals("SOS") && !sosCombinationPositionString.containsKey(posString)
-				&& !sosCombinationPositionString.containsKey(reversePosString(posString))) {
-
-			if (isPlayerRed(redbutton, bluebutton)) {
-				redScore++;
-				System.out.println("red " + posString);
-			}
-
-			else {
-				blueScore++;
-				System.out.println("blue " + posString);
-			}
-			// TODO store the combination of positions for that SOS
-			sosCombinationPositionString.put(posString, true);
-
-		}
-
+	 
+	private static JPanel createAIPanel() {
+ 
+		JPanel jpAI = new JPanel();
+ 
+		ButtonGroup bgAI = new ButtonGroup();
+ 
+		// Add radio buttons to button group
+ 
+		bgAI.add(aiOn);
+		bgAI.add(aiOff);
+ 
+		// Add GUI components
+ 
+		jpAI.add(aiOn);
+		jpAI.add(aiOff);
+ 
+		// Instantiate GUI Components
+ 
+		return jpAI;
 	}
 	
-	private static String reversePosString(String posString) {
-		Stack<String> stack = new Stack<>();
-		
-		String currString = "";
-		for(int i = 0; i < posString.length(); i++) {
-			currString += posString.charAt(i);
-			if(currString.length() == 2) {
-				stack.push(currString);
-				currString = "";
-			}
-		}
-		
-		String reverse = "";
-		
-		while(!stack.empty()) {
-			reverse += stack.pop();
-		}
-		return reverse;
+	private static JPanel createAI2Panel() {
+		 
+		JPanel jpAI2 = new JPanel();
+ 
+		ButtonGroup bgAI2 = new ButtonGroup();
+ 
+		// Add radio buttons to button group
+ 
+		bgAI2.add(ai2On);
+		bgAI2.add(ai2Off);
+ 
+		// Add GUI components
+ 
+		jpAI2.add(ai2On);
+		jpAI2.add(ai2Off);
+ 
+		// Instantiate GUI Components
+ 
+		return jpAI2;
 	}
-
-	private static void updateScores(int gridSize) {
-
-		for (int row = 0; row < gridSize; row++) {
-			for (int col = 0; col < gridSize; col++) {
-
-				String currentChar = board[row][col];
-				if (currentChar != null) {
-					String word = "";
-					String posString = "";
-					// character in middle of sos
-					if (inBounds(row + 1, col, gridSize) && inBounds(row - 1, col, gridSize)) {
-						word = board[row + 1][col] + currentChar + board[row - 1][col];
-						posString = "" + (row + 1) + col + row + col + (row - 1) + col;
-						scoreWord(word, posString);
-
-					}
-
-					if (inBounds(row, col - 1, gridSize) && inBounds(row, col + 1, gridSize)) {
-						word = board[row][col - 1] + currentChar + board[row][col + 1];
-						posString = "" + row + (col - 1) + row + col + (row) + (col + 1);
-						scoreWord(word, posString);
-					}
-
-					// in the middle of left and right
-					if (inBounds(row, col - 1, gridSize) && inBounds(row, col + 1, gridSize)) {
-						word = board[row][col - 1] + currentChar + board[row][col + 1];
-						posString = "" + row + (col - 1) + row + col + row + (col + 1);
-						scoreWord(word, posString);
-					}
-
-					if (inBounds(row - 1, col - 1, gridSize) && inBounds(row + 1, col + 1, gridSize)) {
-						word = board[row - 1][col - 1] + currentChar + board[row + 1][col + 1];
-						posString = "" + (row - 1) + (col - 1) + row + col + (row + 1) + (col + 1);
-						scoreWord(word, posString);
-					}
-
-					if (inBounds(row + 1, col + 1, gridSize) && inBounds(row - 1, col - 1, gridSize)) {
-						word = board[row + 1][col + 1] + currentChar + board[row - 1][col - 1];
-						posString = "" + (row + 1) + (col + 1) + row + col + (row - 1) + (col - 1);
-						scoreWord(word, posString);
-					}
-
-					// on the edge cases of the grid
-
-					// two to the right
-					if (inBounds(row, col + 1, gridSize) && inBounds(row, col + 2, gridSize)) {
-						word = currentChar + board[row][col + 1] + board[row][col + 2];
-						posString = "" + row + col + row + (col + 1) + (row) + (col + 2);
-						scoreWord(word, posString);
-					}
-
-					// two to the left
-					if (inBounds(row, col - 2, gridSize) && inBounds(row, col - 1, gridSize)) {
-						word = board[row][col - 2] + board[row][col - 1] + currentChar;
-						posString = "" + row + (col - 2) + row + (col - 1) + row + col;
-						scoreWord(word, posString);
-					}
-
-					// two below
-					if (inBounds(row + 1, col, gridSize) && inBounds(row + 2, col, gridSize)) {
-						word = board[row + 2][col] + board[row + 1][col] + currentChar;
-						posString = "" + row + col + (row + 1) + col + (row + 2) + col;
-						scoreWord(word, posString);
-					}
-
-					// two above
-					if (inBounds(row - 1, col, gridSize) && inBounds(row - 2, col, gridSize)) {
-						word = board[row - 1][col] + board[row - 2][col] + currentChar;
-						posString = "" + (row - 2) + col + (row - 1) + col + row + col;
-						scoreWord(word, posString);
-					}
-
-					// two left up diagonal
-					if (inBounds(row - 1, col - 1, gridSize) && inBounds(row - 2, col - 2, gridSize)) {
-						word = currentChar + board[row - 1][col - 1] + board[row - 2][col - 2];
-						posString = "" + row + col + (row - 1) + (col - 1) + (row - 2) + (col - 2);
-						scoreWord(word, posString);
-					}
-
-					// two left down diagonal
-					if (inBounds(row + 1, col-1, gridSize) && inBounds(row + 2, col-2, gridSize)) {
-						word = currentChar + board[row+1][col-1] + board[row +2][col-2]; 
-						posString = "" + row + col + (row + 1) + (col-1) + (row + 2) + (col-2);
-						scoreWord(word, posString);
-					}
-
-					// two right up diagonal
-					if (inBounds(row - 1, col+1, gridSize) && inBounds(row - 2, col+2, gridSize)) {
-						word = currentChar + board[row - 1][col+1] + board[row - 2][col+2];
-						posString = "" + row + col + (row - 1) +(col+1)+ (row-2) + (col+2);
-						scoreWord(word, posString);
-					}
-
-					// two right down diagonal
-					if (inBounds(row +1, col + 1, gridSize) && inBounds(row + 2, col + 2, gridSize)) {
-						word = currentChar + board[row + 1][col + 1] + board[row + 2][col + 2];
-						posString = "" + row + col + (row+1) + (col+1) + (row+2) + (col+2);
-						scoreWord(word, posString);
-					}			
-
-				}
-
-			}
-
-		}
-
+	
+	static void makeMove(int row, int col, char piece, JPanel grid, JButton tic) {
+		
+		boolean valid = board.move(row, col, piece);
+		
+		if(!valid)
+			return;
+		
+		System.out.println(row + " - " + col);
+		
+		tic.setText((board.getPlayer() == 1 ? "Blue - " : "Red - ") + piece);
+		tic.setBackground(board.getPlayer() == 1 ? Color.CYAN : Color.RED);
+		
+		currentPlayer.setText(
+			"Current player: " +
+			(board.getPlayer() == 1 ? "Red" : "Blue")
+		);
+		
+		int state = board.getState(isGameSimple());
+		
+		if(state == State.PLAYER_1_WINS)
+			JOptionPane.showMessageDialog(grid, "Red won!");
+		
+		if(state == State.PLAYER_2_WINS)
+			JOptionPane.showMessageDialog(grid, "Blue won!");
+		
+		if(state == State.DRAW)
+			JOptionPane.showMessageDialog(grid, "It's a draw!");
 	}
-
-	private static boolean inBounds(int row, int col, int gridSize) {
-		return row >= 0 && row < gridSize && col >= 0 && col < gridSize;
-
-	}
-
+ 
 	static void buttonAction(JPanel grid) {
-
-		// JFrame jfrSOS = new JFrame();
-
-		// JPanel panel_1 = new JPanel();
-
+ 
 		button.addActionListener(new ActionListener() {
-
+ 
 			public void actionPerformed(ActionEvent e) {
-
+ 
 				try {
-
+ 
 					int n = Integer.parseInt(field.getText());
-
+ 
 					setGrid(grid, n);
+					currentPlayer.setText("Current player: Red");
+					sbutton.setSelected(true);
+					
+					board = new State(n);
+					
+					JButton[][] buttons = new JButton[n][n];
+					
 					for (int i = 0; i < n * n; i++) {
-
-						board = new String[n][n];
-
-						JButton tic = new JButton(i % 2 == 0 ? " " : " ");
-
+ 
+						JButton tic = new JButton();
+ 
 						final int index = i;
+						
 						int col = index % n;
 						int row = index / n;
-
+						
+						buttons[row][col] = tic;
+ 
 						tic.addActionListener(new ActionListener() {
 
-							public void actionPerformed(ActionEvent f) {
-								if (isLetterS(sbutton, obutton)) {
-									tic.setText("S");
-									tic.setEnabled(false);
-									updateBoard(currentPlayer.getText(), index, row, col, "S");
-
-								} else {
-									tic.setText("O");
-									tic.setEnabled(false);
-									updateBoard(currentPlayer.getText(), index, row, col, "O");
-
+							@Override
+							public void actionPerformed(ActionEvent e) {
+								
+								makeMove(row, col, getLetter(), grid, tic);
+								
+								if(isAIOn()) {
+									
+									Move move = AI.getBestMove(board);
+									
+									if(move != null) {
+										
+										makeMove(
+												move.getSpot().get(0),
+												move.getSpot().get(1),
+												move.getPiece(),
+												grid,
+												buttons[move.getSpot().get(0)][move.getSpot().get(1)]);
+									}
+								}						
+								if(isAI2On()) {
+									Move move = AI.getBestMove(board);
+									
+									if(move != null) {
+										
+										makeMove(
+												move.getSpot().get(0),
+												move.getSpot().get(1),
+												move.getPiece(),
+												grid,
+												buttons[move.getSpot().get(0)][move.getSpot().get(1)]);
+									}
+									
 								}
-
-
-								updateScores(n);
-								if (isGameOver(n)) {
-									JOptionPane.showMessageDialog(null, "Game over!      " + "blue:" + blueScore + "    red: " + redScore, null, JOptionPane.PLAIN_MESSAGE);
-								}
-
-								if (isPlayerRed(redbutton, bluebutton)) {
-									currentPlayer.setText("Current player: blue, points: " + blueScore);
-
-								}
-
-								else {
-									currentPlayer.setText("Current player: red, points: " + redScore);
-								}
-
-							}
+							}							
 						});
-
+ 
 						grid.add(tic);
-
 					}
-
-					if (isPlayerRed(redbutton, bluebutton)) {
-						currentPlayer.setText("Current player: blue ");
-
-					}
-
-					else {
-						currentPlayer.setText("Current player: red ");
-					}
-
+ 
 					grid.revalidate();
-
+ 
 					// frame.revalidate();
 				}
-
+ 
 				catch (Exception ex) {
 					ex.printStackTrace();
 				}
 			}
 		});
-
+ 
 		// setFrameAttributes( frame );
-
+ 
 		// frame.revalidate();
 	}
-
+ 
 	// Class helper methods
-
+ 
 	/*
 	 * 
 	 * private static void setFrameAttributes( JFrame myGUI ) { myGUI.setSize( 500,
@@ -561,60 +609,48 @@ public class GUI {
 	 * myGUI.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); myGUI.setVisible(true);
 	 * }
 	 */
-
+ 
 	private static void setGrid(JPanel panel, int n) {
-
+ 
 		panel.removeAll();
-
+ 
 		panel.setLayout(new GridLayout(n, n));
-
+ 
 	}
-
-	private static Boolean isPlayerRed(JRadioButton red, JRadioButton blue) {
-		if (red.isSelected()) {
-			return true;
-		}
-
-		else {
-			return false;
-		}
+ 
+	private static char getLetter() {
+		return sbutton.isSelected() ? 'S' : 'O';
 	}
-
-	private static Boolean isLetterS(JRadioButton s, JRadioButton o) {
-		if (s.isSelected()) {
-			return true;
-		}
-
-		else {
-			return false;
-		}
+ 
+	private static Boolean isGameSimple() {
+		return simplebutton.isSelected();
 	}
-
-	private static Boolean isGameSimple(JRadioButton simple, JRadioButton gen) {
-		if (simple.isSelected()) {
-			return true;
-		} else {
-			return false;
-		}
+	 
+	private static Boolean isAIOn() {
+		return aiOn.isSelected();
 	}
-
+	
+	private static Boolean isAI2On() { 
+		return ai2On.isSelected(); 
+	}
+ 
 	public static JFrame createFrame(int width, int height) {
-
+ 
 		JFrame frame = new JFrame();
-
+ 
 		frame.setSize(width, height);
 		frame.setLocationRelativeTo(null);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setVisible(true);
-
+ 
 		return frame;
 	}
-
+ 
 	public static void main(String[] args) {
 		JFrame frame = createFrame(500, 500);
 		buildGUI(frame.getContentPane());
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
+ 
 		/*
 		 * JPanel panel = new JPanel(new BorderLayout());
 		 * frame.getContentPane().add(panel); JPanel grid = new JPanel();
@@ -631,9 +667,9 @@ public class GUI {
 		 * 
 		 * 
 		 */
-
+ 
 		frame.revalidate();
-
+ 
 	}
-
+ 
 }

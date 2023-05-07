@@ -1,12 +1,48 @@
 package gui;
  
 import java.awt.*;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.HashMap;
  
 import javax.swing.*;
+
+class IOUtils {
+    public static void write(String path, String content) throws IOException {
+        FileWriter writer = null;
+        try {
+            writer = new FileWriter(new File(path));
+            writer.write(content);
+        } finally {
+            if (writer != null) {
+                writer.close();
+            }
+        }
+    }
+}
+
+class MoveRecord { 
+	
+	private int x; 
+	private int y; 
+	private String letter; 
+	private String color; 
+	
+	public MoveRecord(int x, int y, String letter, String color) { 
+		this.x = x; 
+		this.y = y; 
+		this.letter = letter; 
+		this.color = color; 
+	}
+	
+	public String toString() {
+		return "{\"x\":" + x + ",\"y\":" + y + ",\"letter\":\"" + letter + "\",\"color\":\"" + color + "\"}";
+	}
+}
 
 class Spot {
 	
@@ -32,6 +68,7 @@ class Spot {
 	public char getPiece() {
 		return piece;
 	}
+
 }
 
 class State {
@@ -44,6 +81,8 @@ class State {
 	private Spot[][] board;
 	private int player = 1;
 	
+	private ArrayList<MoveRecord> record; 
+	
 	public State(int size) {
 		
 		board = new Spot[size][size];
@@ -53,6 +92,8 @@ class State {
 				board[row][col] = new Spot();
 			}
 		}
+		
+		record = new ArrayList<MoveRecord>(); 
 	}
 	
 	public Spot[][] getBoard() {
@@ -109,6 +150,8 @@ class State {
 		board[row][col].setPiece(piece);
 		
 		player = player == 1 ? 2 : 1;
+		
+		record.add(new MoveRecord(col, row, "" + piece, player == 1 ? "red" : "blue"));
 		
 		return true;
 	}
@@ -181,6 +224,16 @@ class State {
 		
 		return isSimple ? (full ? DRAW : ACTIVE) : DRAW;
 	}
+	
+	public String toString() {
+		
+		String result = "["; 
+		
+		for(int i = 0; i <record.size(); i++)
+			result += record.get(i) + (i < record.size() - 1 ? "," : ""); 
+		
+		return result + "]";
+	}
 }
 
 class Move {
@@ -241,6 +294,7 @@ public class GUI {
 	static JRadioButton aiOff = new JRadioButton("AI Player One Off");
 	static JRadioButton ai2On = new JRadioButton("AI Player Two On");
 	static JRadioButton ai2Off = new JRadioButton("AI Player Two Off");
+	static JButton record = new JButton("Record Game"); 
  
  
 	static State board;
@@ -368,6 +422,7 @@ public class GUI {
  
 		JRadioButton jrbSimple = simplebutton;
 		JRadioButton jrbGen = genbutton;
+		JButton jrbRecord = record; 
  
 		ButtonGroup bgGameType = new ButtonGroup();
  
@@ -384,6 +439,20 @@ public class GUI {
 		jpaType.add(jrbGen);
  
 		header.add(jpaType);
+		
+		jpaType.add(jrbRecord);
+		
+		jrbRecord.addActionListener(new ActionListener() {
+			
+			public void actionPerformed(ActionEvent e) {
+				try {
+					IOUtils.write("./record.json", board.toString());
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}
+		});
  
 		// Return the JPanel
  

@@ -1,10 +1,32 @@
 package junit_test;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import static org.junit.Assert.assertEquals;
+
 
 import static org.junit.Assert.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
 import gui.GUI;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import static org.junit.Assert.assertEquals;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import static org.junit.Assert.assertEquals;
 
 
 class GUITests {
@@ -172,29 +194,29 @@ class GUITests {
 	        Assertions.assertTrue(move.getSpot().get(0) == 1 || move.getSpot().get(0) == 2);
 	        Assertions.assertTrue(move.getSpot().get(1) == 0 || move.getSpot().get(1) == 1);
 	    }
+	   
+	    
+	    public void testToString() {
+	        MoveRecord move = new MoveRecord(2, 3, "A", "black");
+	        String expected = "{\"x\":2,\"y\":3,\"letter\":\"A\",\"color\":\"black\"}";
+	        assertEquals(expected, move.toString());
+	    }
+	    
+	    @Rule
+	    public TemporaryFolder folder = new TemporaryFolder();
+
+	    @Test
+	    public void testWrite() throws IOException {
+	        String path = folder.getRoot().getPath() + "/test.txt";
+	        String content = "Hello, world!";
+	        IOUtils.write(path, content);
+	        String actualContent = new String(Files.readAllBytes(new File(path).toPath()));
+	        assertEquals(content, actualContent);
+	    }
+	    
+	    
+	    
+	    
+	    
+	    
 	}
-
-	
-
-	  	
-	  	
-
-	  
-
-	  
-	
-
-
-
-
-
-
-
-
-    
-    
-    
-    
-    
-    
-
